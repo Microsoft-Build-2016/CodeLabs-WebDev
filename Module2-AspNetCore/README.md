@@ -1,4 +1,4 @@
-﻿<a name="HOLTop" ></a>
+<a name="HOLTop" ></a>
 # ASP.NET Core 1.0 Internals #
 
 ---
@@ -597,8 +597,8 @@ In this task you'll use the dependency injection system to configure the **Reque
 	````C#
 	public RequestCultureMiddleware(RequestDelegate next, IOptions<RequestCultureOptions> options)
 	{
-		next = next;
-		options = options.Value;
+		this.next = next;
+        this.options = options.Value
 	}
 	````
 
