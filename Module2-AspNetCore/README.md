@@ -22,8 +22,6 @@ In this module, you'll see how to:
 <a name="Prerequisites"></a>
 ### Prerequisites ###
 
-> **Note:** All prerequisites have already been installed on the lab machines at Build 2016.
-
 The following is required to complete this module:
 
 - [Visual Studio Community 2015][1] or greater
