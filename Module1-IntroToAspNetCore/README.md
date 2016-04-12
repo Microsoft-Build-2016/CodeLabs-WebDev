@@ -550,7 +550,7 @@ In this task, you'll set up your **Ubuntu** 14.04 environment by installing **AS
 	dnvm upgrade -r coreclr
 	````
 
-1. **Libvu** is a multi-platform asynchronous IO library that is used by Kestrel, a cross-platform HTTP server for hosting ASP.NET Core web applications. Install **libvu** by executing the following commands in a terminal.
+1. **Libuv** is a multi-platform asynchronous IO library that is used by Kestrel, a cross-platform HTTP server for hosting ASP.NET Core web applications. Install **libuv** by executing the following commands in a terminal.
 
 	````
 	sudo apt-get install -y make automake libtool curl
