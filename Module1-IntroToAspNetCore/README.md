@@ -20,6 +20,7 @@ In this module, you will:
 - Create a Web site based on the **ASP.NET Core 1.0** template
 - Walk through and understand the main components of an **ASP.NET Core 1.0** application
 - Scaffold the required components to create a CRUD **ASP.NET Core 1.0** application
+- Add a service for data access
 - Create a unit test project
 - Create and run an **ASP.NET Core 1.0** application in Ubuntu
 
@@ -301,6 +302,21 @@ In this task, you'll run the solution again to verify the work done on the previ
 	_Navigating to the scaffolded MVC views_
 
 1. Go back to Visual Studio and press **SHIFT + F5** to stop debugging.
+
+<a name="Ex2Task4" ></a>
+#### Task 4 - Add a service for data access ####
+
+When creating a real world application, you generally don't want to access data directly through Entity Framework (EF). By creating a service, you are able to easily change the backing store for testing, and contain any changes to the backing store to one class. For our example we'll create a service to access all people in the database, and then update the controller to use that service. We will be keeping things relatively simple, as a real-world service can potentially be complex.
+
+1. Return to Visual Studio.
+
+1. Right click on the **Services** folder, and choose **Add > Class **. Name the new class **PeopleService** and click **Add**.
+
+1. Add the followin `using` statement to the top of the class
+
+	````C#
+		using MyWebApp.Models;
+	```` 
 
 <a name="Exercise3" ></a>
 ### Exercise 3: Unit testing your apps ###
