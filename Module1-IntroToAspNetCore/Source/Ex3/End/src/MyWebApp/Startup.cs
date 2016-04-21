@@ -58,6 +58,8 @@ namespace MyWebApp
                 .AddSqlServer()
                 .AddDbContext<PeopleContext>(options =>
                     options.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=PeopleContext-584a36ef-5591-4b99-9bc0-09bdade67193;Trusted_Connection=True;MultipleActiveResultSets=true"));
+
+			services.AddTransient<IPeopleService, PeopleService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

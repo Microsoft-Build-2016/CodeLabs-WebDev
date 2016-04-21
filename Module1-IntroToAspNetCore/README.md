@@ -20,6 +20,7 @@ In this module, you will:
 - Create a Web site based on the **ASP.NET Core 1.0** template
 - Walk through and understand the main components of an **ASP.NET Core 1.0** application
 - Scaffold the required components to create a CRUD **ASP.NET Core 1.0** application
+- Explore the built in dependency injection implentation in **ASP.NET Core 1.0**
 - Add a service for data access
 - Create a unit test project
 - Create and run an **ASP.NET Core 1.0** application in Ubuntu
@@ -62,8 +63,9 @@ This module includes the following exercises:
 
 1. [Creating a new web site with Visual Studio 2015](#Exercise1)
 1. [Working with Data](#Exercise2)
-1. [Unit testing your apps](#Exercise3)
-1. [Cross-platform development](#Exercise4)
+1. [Adding a service](#Exercise3)
+1. [Unit testing your apps](#Exercise4)
+1. [Cross-platform development](#Exercise5)
 
 Estimated time to complete this module: **60 minutes**
 
@@ -303,29 +305,178 @@ In this task, you'll run the solution again to verify the work done on the previ
 
 1. Go back to Visual Studio and press **SHIFT + F5** to stop debugging.
 
-<a name="Ex2Task4" ></a>
-#### Task 4 - Add a service for data access ####
+<a name="Exercise3" ></a>
+### Exercise 3 - Adding a service ###
 
 When creating a real world application, you generally don't want to access data directly through Entity Framework (EF). By creating a service, you are able to easily change the backing store for testing, and contain any changes to the backing store to one class. For our example we'll create a service to access all people in the database, and then update the controller to use that service. We will be keeping things relatively simple, as a real-world service can potentially be complex.
+
+One challenge developers can face when trying to implement services, and ensure an application is testable, is passing in the appropriate service at the appropriate time. This is where dependency injection can help. Dependency injection (DI) is a design pattern where an external entity will resolve the dependencies a class has. For example, with our controller, we are going to need an instance of `PeopleService`. You will notice that rather than creating a new instance, we'll list it in the constructor of `PeopleController`. ASP.NET will recognize the parameter as a dependency and resolve it at runtime. In fact, we've already seen this in action.
+
+If you open `PeopleController` you'll notice the constructor makes a call for an instance of `PeopleContext` as a parameter, but nowhere did you write the code to create an instance of that class; this is ASP.NET DI in action. If you open **startup.cs** in the root folder you'll notice the following line of code, which adds `PeopleContext` as an available dependency. ASP.NET will automatically give an instance of the context to any class which requests it in the constructor. This includes controllers and any other custom class, such as the service we're about to create.
+
+	````C#
+		services.AddEntityFramework()
+                .AddSqlServer()
+                .AddDbContext<PeopleContext>(options =>
+                    options.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=PeopleContext-584a36ef-5591-4b99-9bc0-09bdade67193;Trusted_Connection=True;MultipleActiveResultSets=true"));
+	````
+
+The ASP.NET documentation contains [more information about ASP.NET DI](https://docs.asp.net/en/latest/fundamentals/dependency-injection.html?highlight=dependency). Let's see how to create a service, and take advantage of ASP.NET DI. 
+
+<a name="Ex3Task1"></a>
+#### Task 1 - Creating the service ####
+
+Let's start by creating the service. The service will take advantage of ASP.NET DI by requesting an instance of `PeopleContext` by adding it as a parameter to the constructor. We will also create an interface so we can register our service later. Finally, we'll create a method named `GetAllPeopleAsync` as an asynchronous method.
 
 1. Return to Visual Studio.
 
 1. Right click on the **Services** folder, and choose **Add > Class **. Name the new class **PeopleService** and click **Add**.
 
-1. Add the followin `using` statement to the top of the class
+1. Add the followin `using` statements to the top of the class:
 
 	````C#
 		using MyWebApp.Models;
+		using Microsoft.Data.Entity;
+	```` 
+Inside the `namespace` declaration we will create an interface for our `PeopleService` named **IPeopleService**. This will allow us to register our class as an available resource for DI. Typically this would be in a separate file, but to keep things simple you'll add it to the same file as the class.
+
+1. Above the class declaration for `PeopleService` add the following code:
+
+	````C#
+		public interface IPeopleService
+		{
+			Task<List<Person>> GetAllPeopleAsync();
+		}
+	````
+
+1. Update `PeopleService` to implement `IPeopleService` by updating the declaration to the following code:
+
+	````C#
+		public class PeopleService : IPeopleService
+	````
+
+1. Inside `PeopleService` add a constructor with a parameter for `PeopleContext`, and create a private data field to store the context by adding the following code:
+
+	````C#
+		private PeopleContext _context;
+
+		public PeopleService(PeopleContext context)
+		{
+			_context = context;
+		}
+	````
+
+1. Add a method for `GetAllPeopleAsync` to `PeopleService`. This will simply return the `Person` table as a list.
+
+	````C#
+		public async Task<List<Person>> GetAllPeopleAsync()
+		{
+			return await _context.Person.ToListAsync();
+		}
+	````
+	
+1. **PeopleService.cs** should look like the code below when you're done with this task.
+
+	````C#
+		using System;
+		using System.Collections.Generic;
+		using System.Linq;
+		using System.Threading.Tasks;
+		using MyWebApp.Models;
+		using Microsoft.Data.Entity;
+
+		namespace MyWebApp.Services
+		{
+			public interface IPeopleService
+			{
+				Task<List<Person>> GetAllPeopleAsync();
+			}
+
+			public class PeopleService// : IPeopleService
+			{
+				private PeopleContext _context;
+
+				public PeopleService(PeopleContext context)
+				{
+					_context = context;
+				}
+
+				public async Task<List<Person>> GetAllPeopleAsync()
+				{
+					return await _context.Person.ToListAsync();
+				}
+			}
+		}
+	````
+
+<a name="Ex3Task2"></a>
+#### Task 2 - Registering our service ####
+
+In order for ASP.NET to make our service available for use in our application we need to register it in `startup.cs`. We will register our service as a **transient** object, meaning a new instance will be created each time it's requested.
+
+1. Open `startup.cs`. At the end of the `ConfigureServices` method, add the following line of code:
+
+	````C#
+		services.AddTransient<IPeopleService, PeopleService>();
+	````
+
+<a name="Ex3Task3"></a>
+#### Task 3 - Update PeopleController to use PeopleService ####
+
+You will finish the creation of `PeopleService` by updating `PeopleController` to use the service for `Index`. We will start by adding in the necessary `using` statement, followed by adding a request for `PeopleService` in the constructor, and then updating `Index` to use the service.
+
+1. Open `PeopleController.cs`. Add the necessary `using` statement by adding the following code to the top of the file:
+
+	````C#
+		using MyWebApp.Services;
 	```` 
 
-<a name="Exercise3" ></a>
-### Exercise 3: Unit testing your apps ###
+1. Add a private data field for our service by adding the following line of code inside `PeopleController`, just below `private PeopleContext _context;`:
+
+	````C#
+		private PeopleService _service
+	````
+
+1. Update the constructor to make a request for `PeopleService`. You will do this by adding an additional parameter to the constructor. The updated constructor should look like the code below when you're complete:
+
+	````C#
+        public PeopleController(PeopleContext context, PeopleService service)
+        {
+            _context = context;
+			_service = service;
+        }
+	````
+
+1. Inside the `Index` method you will comment the original call to the `View` method to use the service you created. Update the method using the code below:
+
+	````C#
+		// GET: People
+        public async Task<IActionResult> Index()
+        {
+			//return View(await _context.Person.ToListAsync());
+			return View(await _service.GetAllPeopleAsync());
+        }
+	````
+
+<a name="Ex3Task4"></a>
+#### Task 4 - Run the solution #### 
+
+In this task, you'll run the solution again to verify the work done on the previous tasks.
+
+1. Press **F5** to run the solution.
+
+1. Navigate to **/People** to see the list of people. You should see the person you added earlier. You should notice no change to the application, as the service is using the same context you were using 
+
+1. Go back to Visual Studio and press **SHIFT + F5** to stop debugging.
+
+<a name="Exercise4" ></a>
+### Exercise 4: Unit testing your apps ###
 
 Having a suite of automated tests is one of the best ways to ensure a software application does what its authors intended it to do. ASP.NET Core has been designed with testability in mind, so that creating unit tests for your applications is easier than ever before.
 
 In this exercise, you'll add a test project to your solution and then run unit tests using Visual Studio.
 
-<a name="Ex3Task1" ></a>
+<a name="Ex4Task1" ></a>
 #### Task 1 - Creating the test project ####
 
 A test project is just a class library with references to a test runner and the project being tested (also referred to as the System Under Test or SUT). It’s a good idea to organize your test projects in a separate folder from your SUT projects. We'll be using the open-source [xUnit testing tool](http://xunit.github.io/docs/getting-started-dnx.html) in this exercise.
@@ -432,7 +583,7 @@ In this task, you'll create a test project in an ASP.NET Core solution.
 	}
 	````
 
-<a name="Ex3Task2" ></a>
+<a name="Ex4Task2" ></a>
 #### Task 2 - Creating some Simple Tests ####
 
 1. In **Solution Explorer**, right-click the **MyWebApp.UnitTests** project and select **Add | Class...**, name the file _MyTest.cs_ and click **Add**.
@@ -485,7 +636,7 @@ In this task, you'll create a test project in an ASP.NET Core solution.
 
 	> **Note:** If it bothers you, you can make that second test pass by changing from `Assert.Equal` to `Assert.NotEqual`.
 
-<a name="Ex3Task3" ></a>
+<a name="Ex4Task3" ></a>
 #### Task 3 - Testing a Controller Action ####
 
 1. Next, we'll add a simple test for our `HomeController`. In **Solution Explorer**, right-click the **MyWebApp.UnitTests** project and select **Add | Class...**, name the file _HomeControllerTests.cs_ and click **Add**.
@@ -527,14 +678,14 @@ In this task, you'll create a test project in an ASP.NET Core solution.
         * [Unit Testing ASP.NET Core applications](https://docs.asp.net/en/latest/testing/unit-testing.html)
         * [Unit Testing Entity Framework with the InMemory provider](https://docs.efproject.net/en/latest/miscellaneous/testing.html)
 
-<a name="Exercise4" ></a>
-### Exercise 4: Cross-platform development ###
+<a name="Exercise5" ></a>
+### Exercise 5: Cross-platform development ###
 
 To appeal to a broader audience of developers, **ASP.NET Core 1.0** supports cross-platform development on Windows, Mac and Linux. The entire ASP.NET Core 1.0 stack is open source and encourages community contributions and engagement. ASP.NET Core 1.0 comes with a new, agile project system in Visual Studio while also providing a complete command-line interface so that you can develop using the tools of your choice.
 
 In this exercise, you'll create a new project and run it in **Ubuntu** 14.04 using the terminal and **Visual Studio Code**. Full instructions for installing ASP.NET Core on all platforms are available [here](https://docs.asp.net/en/latest/getting-started/index.html).
 
-<a name="Ex4Task1" ></a>
+<a name="Ex5Task1" ></a>
 #### Task 1 - Creating the Ubuntu environment ####
 
 > **IMPORTANT NOTE:** We've documented the necessary steps for creating an Ubuntu development environment, but if you're completing this Code Lab at Build 2016, we've already configured your development environment in a Hyper-V virtual machine. You can skim through Task 1 to understand what's involved, or just skip ahead to [Task 2 - Creating a ASP.NET Core 1.0 application using Yeoman](#Ex4Task2).
@@ -617,7 +768,7 @@ In this task, you'll set up your **Ubuntu** 14.04 environment by installing **AS
 	sudo npm install -g yo generator-aspnet
 	````
 
-<a name="Ex4Task2" ></a>
+<a name="Ex5Task2" ></a>
 #### Task 2 - Creating a ASP.NET Core 1.0 application using Yeoman ####
 
 **Yeoman** helps you to kickstart new projects, prescribing best practices and tools to help you stay productive.
@@ -675,7 +826,7 @@ In this task, you'll create a **ASP.NET Core 1.0** web application using **Yeoma
 	dnu restore
 	````
 
-<a name="Ex4Task3" ></a>
+<a name="Ex5Task3" ></a>
 #### Task 3 - Opening the site in VS Code ####
 
 **Visual Studio Code** is a code editor redefined and optimized for building and debugging modern web and cloud applications. Additionally, it's free and available on your favorite platform - Linux, Mac OSX, and Windows.

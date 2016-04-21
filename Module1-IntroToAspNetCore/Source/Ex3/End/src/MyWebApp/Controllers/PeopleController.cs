@@ -4,22 +4,26 @@ using Microsoft.AspNet.Mvc;
 using Microsoft.AspNet.Mvc.Rendering;
 using Microsoft.Data.Entity;
 using MyWebApp.Models;
+using MyWebApp.Services;
 
 namespace MyWebApp.Controllers
 {
     public class PeopleController : Controller
     {
         private PeopleContext _context;
+		private PeopleService _service;
 
-        public PeopleController(PeopleContext context)
+        public PeopleController(PeopleContext context, PeopleService service)
         {
-            _context = context;    
+            _context = context;
+			_service = service;
         }
 
         // GET: People
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Person.ToListAsync());
+			//return View(await _context.Person.ToListAsync());
+			return View(await _service.GetAllPeopleAsync());
         }
 
         // GET: People/Details/5
