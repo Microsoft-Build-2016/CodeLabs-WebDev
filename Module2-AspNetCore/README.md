@@ -80,43 +80,56 @@ In this task, you'll create an empty ASP.NET Core 1.0 project and configure it t
 
 1. Open **Visual Studio Community 2015** and select **File | New Project...** to start a new solution.
 
-1. In the **New Project** dialog box, select **ASP.NET Web Application** under the **Visual C# | Web** tab, and make sure **.NET Framework 4.6** is selected. Name the project _MyWebApp_, choose a **Location** and click **OK**.
+1. In the **New Project** dialog box, select **ASP.NET Core Web Application (.NET Core)** under the **Visual C# | Web** tab, and make sure **.NET Framework 4.6** is selected. Name the project _MyWebApp_, choose a **Location** and click **OK**.
 
-	![New ASP.NET Web Application project](Images/creating-new-aspnet-web-application-project.png?raw=true "New ASP.NET Web Application project")
+	![New ASP.NET Web Application project](Images/creating-a-new-aspnet-core-web-application.png?raw=true "New ASP.NET Web Application project")
 
 	_Creating a new ASP.NET Web Application project_
 
-1. In the **New ASP.NET Project** dialog box, select the **Empty** template under **ASP.NET 5 Templates**. Click **OK**.
+1. In the **New ASP.NET Core Web Application (.NET Core)** dialog box, select the **Empty** template under **ASP.NET Core Templates**. Click **OK**.
 
-	![Creating a new project with the ASP.NET Core Empty template](Images/creating-a-new-empty-project.png?raw=true "Creating a new project with the ASP.NET Core Empty template")
+	![Creating a new project with the ASP.NET Core Empty template](Images/creating-a-new-aspnet-core-empty-project.png?raw=true "Creating a new project with the ASP.NET Core Empty template")
 
 	_Creating a new project with the ASP.NET Core Empty template_
 
-1. Add the **Microsoft.AspNet.StaticFiles** package as a dependency to **project.json**.
+1. Add the **Microsoft.AspNetCore.StaticFiles** package as a dependency to **project.json**.
 
 	````JSON
 	"dependencies": {
-	  "Microsoft.AspNet.IISPlatformHandler": "1.0.0-rc1-final",
-	  "Microsoft.AspNet.Server.Kestrel": "1.0.0-rc1-final",
-	  "Microsoft.AspNet.StaticFiles": "1.0.0-rc1-final"
+	 "Microsoft.NETCore.App": {
+      "version": "1.0.0",
+      "type": "platform"
+    },
+    "Microsoft.AspNetCore.Diagnostics": "1.0.0",    
+    "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0",
+    "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
+    "Microsoft.Extensions.Logging.Console": "1.0.0",
+    "Microsoft.AspNetCore.StaticFiles": "1.0.0"
 	},
 	````
+	Save the file and wait while the package is restored in your solution.
 
 1. Open the **Startup.cs** file and add the **UseStaticFiles** method call in the **Configure** method before the hello world middleware.
 
 	<!-- mark:5 -->
 	````C#
-    public void Configure(IApplicationBuilder app)
-    {
-        app.UseIISPlatformHandler();
+    public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+	{
+		loggerFactory.AddConsole();
 
-        app.UseStaticFiles();
+		if (env.IsDevelopment())
+		{
+			app.UseDeveloperExceptionPage();
+		}
 
-        app.Run(async (context) =>
-        {
-            await context.Response.WriteAsync("Hello World!");
-        });
-    }
+		//Add this line of code
+		app.UseStaticFiles();
+
+		app.Run(async (context) =>
+		{
+			await context.Response.WriteAsync("Hello World!");
+		});
+	}
 	````
 
 1. Create a file called **index.html** with the following contents in the **wwwroot** folder.
@@ -161,17 +174,22 @@ In this task, you'll use the **UseFileServer** to enable serving both, static an
 
 	<!-- mark:5 -->
 	````C#
-    public void Configure(IApplicationBuilder app)
-    {
-        app.UseIISPlatformHandler();
+ 	public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+	{
+		loggerFactory.AddConsole();
 
-        app.UseFileServer();
+		if (env.IsDevelopment())
+		{
+			app.UseDeveloperExceptionPage();
+		}
 
-        app.Run(async (context) =>
-        {
-            await context.Response.WriteAsync("Hello World!");
-        });
-    }
+		app.UseFileServer();
+
+		app.Run(async (context) =>
+		{
+			await context.Response.WriteAsync("Hello World!");
+		});
+	}
 	````
 
 1. Run the application again. The default page **index.html** should be shown when navigating to the root of the site.
@@ -194,14 +212,21 @@ In this task, you'll configure the project to use ASP.NET MVC and configure a sa
 
 1. Open **Visual Studio Community 2015** and the **MyWebApp.sln** solution located in the **Source/Ex1/End** folder. Alternatively, you can continue with the solution that you obtained in the previous exercise.
 
-1. Open the **project.json** file and add **Microsoft.AspNet.Mvc** to the **dependencies** section.
+1. Open the **project.json** file and add **Microsoft.AspNetCore.Mvc** to the **dependencies** section.
 
 	````JSON
 	"dependencies": {
-		"Microsoft.AspNet.IISPlatformHandler": "1.0.0-rc1-final",
-		"Microsoft.AspNet.Server.Kestrel": "1.0.0-rc1-final",
-		"Microsoft.AspNet.StaticFiles": "1.0.0-rc1-final",
-		"Microsoft.AspNet.Mvc": "6.0.0-rc1-final"
+		"Microsoft.NETCore.App": {
+      	"version": "1.0.0",
+      	"type": "platform"
+    	},
+		"Microsoft.AspNetCore.Diagnostics": "1.0.0",
+
+		"Microsoft.AspNetCore.Server.IISIntegration": "1.0.0",
+		"Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
+		"Microsoft.Extensions.Logging.Console": "1.0.0",
+		"Microsoft.AspNetCore.StaticFiles": "1.0.0",
+		"Microsoft.AspNetCore.Mvc": "1.0.0"
 	},
 	````
 
@@ -214,10 +239,9 @@ In this task, you'll configure the project to use ASP.NET MVC and configure a sa
 	(Code Snippet - _ASPNETCore - Ex2 - HomeController_)
 	<!-- mark:1-10 -->
 	````C#
+	using Microsoft.AspNet.Mvc;
 	namespace MyWebApp.Controllers
 	{
-		 using Microsoft.AspNet.Mvc;
-
 		 public class HomeController : Controller
 		 {
 			  [HttpGet()]
@@ -236,19 +260,24 @@ In this task, you'll configure the project to use ASP.NET MVC and configure a sa
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app)
-    {
-        app.UseIISPlatformHandler();
+    public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+	{
+		loggerFactory.AddConsole();
 
-        app.UseFileServer();
+		if (env.IsDevelopment())
+		{
+			app.UseDeveloperExceptionPage();
+		}
 
-        app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-            });
-    }
+		app.UseFileServer();
+
+		app.UseMvc(routes =>
+		{
+			routes.MapRoute(
+				name: "default",
+				template: "{controller=Home}/{action=Index}/{id?}");
+		});
+	}
 	````
 
 1. Run the site and verify the message is returned from your MVC controller by navigating to the **/home** endpoint.
@@ -273,40 +302,42 @@ Request delegates are configured using **Run**, **Map**, and **Use** extension m
 
 In this task, you'll create inline middleware.
 
-1. Open **Visual Studio Community 2015** and select **File | New Project...** to start a new solution using the **ASP.NET Web Application** template, name it _MiddlewareApp_, click **OK** and then select the **Empty** template under **ASP.NET 5 Templates**.
+1. Open **Visual Studio Community 2015** and select **File | New Project...** to start a new solution using the **ASP.NET Core Web Application** template, name it _MiddlewareApp_, click **OK** and then select the **Empty** template under **ASP.NET Core Templates**.
 
 1. Open the **Startup.cs** file and replace the content of the **Configure** method with the following code snippet which creates an inline middleware that runs **before** the hello world delegate that sets the culture for the current request from the query string.
 
 	(Code Snippet - _ASPNETCore - Ex3 - InlineMiddleware_)
 	<!-- mark:3-27 -->
 	````C#
-    public void Configure(IApplicationBuilder app)
-    {
-        app.UseIISPlatformHandler();
+   public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+	{
+		loggerFactory.AddConsole();
 
-        app.Use((context, next) =>
-        {
-            var cultureQuery = context.Request.Query["culture"];
-            if (!string.IsNullOrWhiteSpace(cultureQuery))
-            {
-                var culture = new CultureInfo(cultureQuery);
-#if !DNXCORE50
-                Thread.CurrentThread.CurrentCulture = culture;
-                Thread.CurrentThread.CurrentUICulture = culture;
-#else
-                CultureInfo.CurrentCulture = culture;
-                CultureInfo.CurrentUICulture = culture;
-#endif
-            }
+		if (env.IsDevelopment())
+		{
+			app.UseDeveloperExceptionPage();
+		}
 
-            // Call the next delegate/middleware in the pipeline
-            return next();
-        });
+		app.Use((context, next) =>
+		{
+			var cultureQuery = context.Request.Query["culture"];
+			if (!string.IsNullOrWhiteSpace(cultureQuery))
+			{
+				var culture = new CultureInfo(cultureQuery);
 
-        app.Run(async (context) =>
-        {
-            await context.Response.WriteAsync($"Hello {CultureInfo.CurrentCulture.DisplayName}");
-        });
+				CultureInfo.CurrentCulture = culture;
+				CultureInfo.CurrentUICulture = culture;
+
+			}
+				//Call the next delegate/middleware in the pipeline
+			return next();
+		});
+			
+
+		app.Run(async (context) =>
+		{
+			await context.Response.WriteAsync($"Hello {CultureInfo.CurrentCulture.DisplayName}");
+		});
     }
 	````
 
@@ -344,21 +375,16 @@ In this task you'll move the middleware to a separated file.
 	````C#
     public Task Invoke(HttpContext context)
     {
-        var cultureQuery = context.Request.Query["culture"];
-        if (!string.IsNullOrWhiteSpace(cultureQuery))
-        {
-            var culture = new CultureInfo(cultureQuery);
-#if !DNXCORE50
-            Thread.CurrentThread.CurrentCulture = culture;
-            Thread.CurrentThread.CurrentUICulture = culture;
-#else
-            CultureInfo.CurrentCulture = culture;
-            CultureInfo.CurrentUICulture = culture;
-#endif
-        }
+		var cultureQuery = context.Request.Query["culture"];
+		if(!string.IsNullOrWhiteSpace(cultureQuery))
+		{
+			var culture = new CultureInfo(cultureQuery);
+			CultureInfo.CurrentCulture = culture;
+			CultureInfo.CurrentUICulture = culture;
+		}
 
-        // Call the next delegate/middleware in the pipeline
-        return this.next(context);
+		// Call the next delegate/middleware in the pipeline
+		return this.next(context);
     }
 	````
 
@@ -380,18 +406,22 @@ In this task you'll move the middleware to a separated file.
 
 	<!-- mark:1 -->
 	``` C#
-    public void Configure(IApplicationBuilder app)
-    {
-        app.UseIISPlatformHandler();
+    public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+	{
+		loggerFactory.AddConsole();
 
-        app.UseRequestCulture();
+		if (env.IsDevelopment())
+		{
+			app.UseDeveloperExceptionPage();
+		}
 
-        app.Run(async (context) =>
-        {
-            await context.Response.WriteAsync($"Hello {CultureInfo.CurrentCulture.DisplayName}");
-        });
+		app.UseRequestCulture();                
 
-    }
+		app.Run(async (context) =>
+		{
+			await context.Response.WriteAsync($"Hello {CultureInfo.CurrentCulture.DisplayName}");
+		});
+	}
 	```
 
 1. Run the application and verify that the middleware is now running as a class.
@@ -439,31 +469,27 @@ In this task, you'll update the **RequestCultureMiddleware** implementation to s
 	````C#
     public Task Invoke(HttpContext context)
     {
-        CultureInfo requestCulture = null;
+		CultureInfo requestCulture = null;
 
-        var cultureQuery = context.Request.Query["culture"];
-        if (!string.IsNullOrWhiteSpace(cultureQuery))
-        {
-            requestCulture = new CultureInfo(cultureQuery);
-        }
-        else
-        {
-            requestCulture = this.options.DefaultCulture;
-        }
+		var cultureQuery = context.Request.Query["culture"];
+		if (!string.IsNullOrWhiteSpace(cultureQuery))
+		{
+			requestCulture = new CultureInfo(cultureQuery);
+		}
+		else
+		{
+			requestCulture = this.options.DefaultCulture;
+		}
 
-        if (requestCulture != null)
-        {
-#if !DNXCORE50
-            Thread.CurrentThread.CurrentCulture = requestCulture;
-            Thread.CurrentThread.CurrentUICulture = requestCulture;
-#else
-            CultureInfo.CurrentCulture = requestCulture;
-            CultureInfo.CurrentUICulture = requestCulture;
-#endif
-        }
+		if (requestCulture != null)
+		{
+			CultureInfo.CurrentCulture = requestCulture;
+			CultureInfo.CurrentUICulture = requestCulture;
+		}
 
-        return this.next(context);
-    }
+		// Call the next delegate/middleware in the pipeline
+		return this.next(context);
+	}
 	````
 
 1. In the same file, replace the **RequestCultureMiddlewareExtensions** class implementation with the following code snippet which adds an overload to the **UseRequestCulture** method that takes the **RequestCultureOptions** and passes them into the `UseMiddleware<RequestCultureMiddleware>` call.
@@ -514,15 +540,16 @@ In this task, you'll use the new **Configuration** system loading the default cu
     }
 	````
 
-1. Add a new constructor, create a new **Configuration** object in the constructor using the **ConfigurationBuilder** and assign it to the configuration class field that you created in the previous step.
+1. Add a new constructor that will have information about the current environment, in order to be able to set the base path for the configuration builder to use, so the configuration file could be located where you are going to create it  (in the application's root). Then create a new **Configuration** object in the constructor using the **ConfigurationBuilder**; set its base path using the current environment **ContentRoothPath** and assign it to the configuration class field that you created in the previous step.
 
 	(Code Snippet - _ASPNETCore - Ex3 - StartupConstructor_)
 	<!-- mark:1-7 -->
 	````C#
-    public Startup()
+    public Startup(IHostingEnvironment env)
     {
         var configuration = new ConfigurationBuilder()
-            .Build();
+		.SetBasePath(env.ContentRootPath)
+		.Build();
 
         this.configuration = configuration;
     }
@@ -533,11 +560,19 @@ In this task, you'll use the new **Configuration** system loading the default cu
 	<!-- mark:4 -->
 	````JSON
 	"dependencies": {
-	  "Microsoft.AspNet.IISPlatformHandler": "1.0.0-rc1-final",
-	  "Microsoft.AspNet.Server.Kestrel": "1.0.0-rc1-final",
-	  "Microsoft.Extensions.Configuration.Json": "1.0.0-rc1-final"
+	  "Microsoft.NETCore.App": {
+      "version": "1.0.0",
+      "type": "platform"
+    },
+    "Microsoft.AspNetCore.Diagnostics": "1.0.0",
+    
+    "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0",
+    "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
+    "Microsoft.Extensions.Logging.Console": "1.0.0",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0"
 	},
 	````
+	Save the file and wait for the packages be updated.
 
 1. Back in the _Startup.cs_ file, add a call to `.AddJsonFile("config.json")` immediately after the creation of the **ConfigurationBuilder** object as a chained method.
 
@@ -550,6 +585,7 @@ In this task, you'll use the new **Configuration** system loading the default cu
         public Startup()
         {
             var configuration = new ConfigurationBuilder()
+				.SetBasePath(env.ContentRootPath)
                 .AddJsonFile("config.json")
                 .Build();
 
@@ -594,18 +630,7 @@ ASP.NET Core is designed from the ground up to support and leverage dependency i
 
 In this task you'll use the dependency injection system to configure the **RequestCultureMiddleware** options.
 
-1. Open the _project.json_ file and add a reference to the **Microsoft.Extensions.OptionsModel** package in the **dependencies** node.
-
-	````JSON
-	"dependencies": {
-	  "Microsoft.AspNet.IISPlatformHandler": "1.0.0-rc1-final",
-	  "Microsoft.AspNet.Server.Kestrel": "1.0.0-rc1-final",
-	  "Microsoft.Extensions.Configuration.Json": "1.0.0-rc1-final",
-	  "Microsoft.Extensions.OptionsModel": "1.0.0-rc1-final"
-	},
-	````
-
-1. Change the **RequestCultureMiddleware** constructor to take `IOptions<RequestCultureOptions>` instead of `RequestCultureOptions` and obtain the value of the options parameter. Resolve the missing dependencies.
+1. Change the **RequestCultureMiddleware** constructor to take `IOptions<RequestCultureOptions>` instead of `RequestCultureOptions` and obtain the value of the options parameter. Resolve the missing dependencies. Observe that in the ASP.NET Core 1.0.0 release, the **Microsoft.Extensions.Options** component is already included (in previous versions of ASP.NET Core it had to be referenced in the project.json file and included as an external package). 
 
 	````C#
 	public RequestCultureMiddleware(RequestDelegate next, IOptions<RequestCultureOptions> options)
@@ -666,29 +691,30 @@ In this task, you'll learn how the ASP.NET Core project templates use ASP.NET Id
 
 1. Open **Visual Studio Community 2015** and select **File | New | Project...** to create a new solution.
 
-1. In the **New Project** dialog box, select **ASP.NET Web Application** under the **Visual C# | Web** tab, and make sure **.NET Framework 4.6** is selected. Name the project _MyWebApp_, choose a **Location** and click **OK**.
+1. In the **New Project** dialog box, select **ASP.NET Core Web Application (.NET Core)** under the **Visual C# | Web** tab, and make sure **.NET Framework 4.6** is selected. Name the project _MyWebApp_, choose a **Location** and click **OK**.
 
-	![New ASP.NET Web Application project](Images/creating-new-aspnet-web-application-project.png?raw=true "New ASP.NET Web Application project")
+	![New ASP.NET Web Application project](Images/creating-a-new-aspnet-core-web-application.png?raw=true "New ASP.NET Web Application project")
 
 	_Creating a new ASP.NET Web Application project_
 
-1. In the **New ASP.NET Project** dialog box, select the **Web Application** template under **ASP.NET 5 Templates**. Also, make sure that the **Authentication** option is set to **Individual User Accounts**. Click **OK** to continue.
 
-	![Creating a new project with the Web Application template](Images/creating-a-new-aspnet-project.png?raw=true "Creating a new project with the Web Application template")
+1. In the **New ASP.NET Core Web Application (.NET Core)** dialog box, select the **Web Application** template under **ASP.NET Core Templates**. Also, make sure that the **Authentication** option is set to **Individual User Accounts**. Click **OK** to continue.
+
+	![Creating a new project with the Web Application template](Images/creating-a-new-aspnet-core-project.png?raw=true "Creating a new project with the Web Application template")
 
 	_Creating a new project with the Web Application template_
 
-1. Once the project is created, open the _project.json_ file and locate the _Microsoft.AspNet.Identity.EntityFramework_ package. This package has the **Entity Framework** implementation of **ASP.NET Identity** which will persist the ASP.NET Identity data and schema to SQL Server.
+1. Once the project is created, open the _project.json_ file and locate the _Microsoft.AspNetCore.Identity.EntityFrameworkCore_ package. This package has the **Entity Framework** implementation of **ASP.NET Identity** which will persist the ASP.NET Identity data and schema to SQL Server.
 
-	![The Microsoft.AspNet.Identity.EntityFramework package](Images/the-identity-package.png?raw=true "The Microsoft.AspNet.Identity.EntityFramework package")
+	![The Microsoft.AspNetCore.Identity.EntityFrameworkCore package](Images/the-identity-package-core.png?raw=true "The Microsoft.AspNet.Identity.EntityFramework package")
 
-	_The Microsoft.AspNet.Identity.EntityFramework package_
+	_The Microsoft.AspNetCore.Identity.EntityFrameworkCore package_
 
-1. Expand the References node in Solution Explorer and then expand the _Microsoft.AspNet.Identity.EntityFramework_ package inside _DNX 4.5.1_. Note that it depends on _Microsoft.AspNet.Identity_ which is the primary reference assembly for the ASP.NET Identity system. This assembly contains the core set of interfaces for ASP.NET Identity.
+1. Expand the References node in Solution Explorer and then expand the _Microsoft.AspNetCore.Identity.EntityFrameworkCore_ package inside _.NETCoreApp_. Note that it depends on _Microsoft.AspNetCore.Identity_ which is the primary reference assembly for the ASP.NET Core Identity system. This assembly contains the core set of interfaces for ASP.NET Identity.
 
-	![The Microsoft.AspNet.Identity.EntityFramework dependencies](Images/the-identity-package-dependencies.png?raw=true "The Microsoft.AspNet.Identity.EntityFramework package dependencies")
+	![The Microsoft.AspNet.Identity.EntityFramework dependencies](Images/the-identity-package-dependencies-core.png?raw=true "The Microsoft.AspNet.Identity.EntityFramework package dependencies")
 
-	_The Microsoft.AspNet.Identity.EntityFramework package dependencies_
+	_The Microsoft.AspNetCore.Identity.EntityFrameworkCore package dependencies_
 
 1. Open the _Startup.cs_ file and locate the **ConfigureServices** method. In this method, the Identity services are configured by the following code.
 
@@ -724,19 +750,20 @@ In this task, you'll learn how the ASP.NET Core project templates use ASP.NET Id
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(RegisterViewModel model)
-    {
-        if (ModelState.IsValid)
-        {
-            var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (result.Succeeded)
-            {
-                // ...
+   public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
+	{
+		ViewData["ReturnUrl"] = returnUrl;
+		if (ModelState.IsValid)
+		{
+		var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+		var result = await _userManager.CreateAsync(user, model.Password);
+		if (result.Succeeded)
+		{
+			// ...
 
-                await _signInManager.SignInAsync(user, isPersistent: false);
+			await _signInManager.SignInAsync(user, isPersistent: false);
 
-                // ...
+			// ...
 	````
 
 1. Locate the **Login** action with the **HttpPost** attribute. This action signs in the user using the **PasswordSignInAsync** method of the **SignInManager** service.
@@ -826,11 +853,12 @@ In this task, you'll create a Facebook app and configure your Web Application pr
 1. Open the _project.json_ file and add the **Microsoft.AspNet.Authentication.Facebook** package as dependency
 
 	````JSON
-  "dependencies": {
+	"dependencies":{
 		...
-		"Microsoft.AspNet.Authentication.Facebook":  "1.0.0-rc1-final"
-  },
+		"Microsoft.AspNetCore.Authentication.Facebook": "1.0.0"		 
+	},
 	````
+	Save the file and wait for the package to be restored.
 
 1. Open the _startup.cs_ file and add the Facebook middleware in the **Configure** method as shown in the following code snippet.
 
@@ -839,16 +867,17 @@ In this task, you'll create a Facebook app and configure your Web Application pr
 	````C#
     public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
     {
-        // ...
+		
+		// ...
 
-        app.UseIdentity();
+		app.UseIdentity();
 
-        app.UseFacebookAuthentication(options =>
-        {
-            options.AppId = Configuration["Authentication:Facebook:AppId"];
-            options.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
-        });
+		app.UseFacebookAuthentication(new FacebookOptions()
+            {
+                AppId = Configuration["Authentication:Facebook:AppId"],
+                AppSecret = Configuration["Authentication:Facebook:AppSecret"],
 
+            });
         // ...
     }
 	````
